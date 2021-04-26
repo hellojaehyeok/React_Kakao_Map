@@ -1,22 +1,22 @@
-# React_Kakao_Map
-React에서 KaKao Map 을 사용하며 정리한 Repository입니다.
+# React_Kakao_Map 
+React에서 KaKao Map 을 사용하며 정리한 Repository입니다.          
 
-카카오에서 나온 sample들을 참고하였습니다.
-아래 주소에 나온 코드들은 Vanila Script, jQuery여서
-실제 프로젝트에는 React 방식대로 해석하여 코드를 작성하였습니다.
-https://apis.map.kakao.com/web/sample/
+카카오에서 나온 sample들을 참고하였습니다.        
+아래 주소에 나온 코드들은 Vanila Script, jQuery여서        
+실제 프로젝트에는 React 방식대로 해석하여 코드를 작성하였습니다.        
+https://apis.map.kakao.com/web/sample/        
 
 
 # 기초 세팅 && map 생성
-Kakao Map을 사용하기 위해서는 ./public/index.html에 아래 코드를 작성합니다.      
+Kakao Map을 사용하기 위해서는 ./public/index.html에 아래 코드를 작성합니다.              
 
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey= -kakao key- &libraries=clusterer,services"></script>
 
 
-map을 적용시킬 div를 생성한다. useRef를 이용하여 해당 div에 접근합니다.
-map의 경우 지도 유형 등을 바꿀 때 접근해야 하기 때문에 useState로 저장하여 
-어디서든 사용할 수 있게 만들었습니다.
-useEffect를 사용하여 로드가 완료되면 카카오 지도를 만듭니다.
+map을 적용시킬 div를 생성한다. useRef를 이용하여 해당 div에 접근합니다.        
+map의 경우 지도 유형 등을 바꿀 때 접근해야 하기 때문에 useState로 저장하여         
+어디서든 사용할 수 있게 만들었습니다.        
+useEffect를 사용하여 로드가 완료되면 카카오 지도를 만듭니다.        
 
 
     const [kakaoMap, setKakaoMap] = useState(null);
@@ -45,20 +45,20 @@ useEffect를 사용하여 로드가 완료되면 카카오 지도를 만듭니�
     }, [container]);
 
 # Marker, Clusterer 생성 및 활용
-마커란 지도에 위치를 표시할 수 있는 것이고
-클러스터러란 지도를 줌아웃 하였을 때 마커의 개수를 표시하는 것입니다.
+마커란 지도에 위치를 표시할 수 있는 것이고        
+클러스터러란 지도를 줌아웃 하였을 때 마커의 개수를 표시하는 것입니다.        
 
-클러스터러는 map과 동일하게 여러 곳에서 사용하기 때문에  state로 빼줍니다.
-(excClusterer를 만들지 않은 이유는 따로 이용하는 곳이 없기 때문입니다.)
+클러스터러는 map과 동일하게 여러 곳에서 사용하기 때문에  state로 빼줍니다.        
+(excClusterer를 만들지 않은 이유는 따로 이용하는 곳이 없기 때문입니다.)        
 
     const [, setExcClusterer] = useState();
 
-마커를 담는 배열입니다.
+마커를 담는 배열입니다.        
 
     const [exclusiveArr, setExclusiveArr] = useState([]);
 
-useEffect 등으로 배열에 좌표값을 담습니다.
-(서버에서 정보를 받아옵니다.)
+useEffect 등으로 배열에 좌표값을 담습니다.        
+(서버에서 정보를 받아옵니다.)        
 
     setExclusiveArr(
       [ 
@@ -69,9 +69,9 @@ useEffect 등으로 배열에 좌표값을 담습니다.
     );
 
 
-마커와 클러스터를 동시에 생성해 주는 함수를 만들어 코드를 간소화시킵니다.
-마커와 클러스터러는 여러 개 만들 수 있습니다.
-주석으로 추가 설명 이어가겠습니다.
+마커와 클러스터를 동시에 생성해 주는 함수를 만들어 코드를 간소화시킵니다.        
+마커와 클러스터러는 여러 개 만들 수 있습니다.        
+주석으로 추가 설명 이어가겠습니다.        
 
     const addMarkClust = (array, setClusterer, markerImg, clustererImg) => {
 
@@ -158,7 +158,7 @@ useEffect 등으로 배열에 좌표값을 담습니다.
     }
 
 
-이후 bool 타입 변수에 따라 마커를 생성/제거할 수 있습니다.
+이후 bool 타입 변수에 따라 마커를 생성/제거할 수 있습니다.        
 
     bool
     ?
@@ -168,12 +168,12 @@ useEffect 등으로 배열에 좌표값을 담습니다.
 
 
 # 지도 유형 바꾸기
-일반, 위성, 지도, 거리 뷰에 대한 코드입니다.
-더 많은 유형은 카카오톡 샘플에 있습니다.
+일반, 위성, 지도, 거리 뷰에 대한 코드입니다.        
+더 많은 유형은 카카오톡 샘플에 있습니다.        
 
 
-redux를 활용하여 변수의 값을 변경하였습니다.
-useEffect 안에 switch 문을 이용하여 각각의 이벤트를 주었습니다.
+redux를 활용하여 변수의 값을 변경하였습니다.        
+useEffect 안에 switch 문을 이용하여 각각의 이벤트를 주었습니다.        
 
 
     // 지도의 타입을 초기화 시킨 후 변수에 따라 재적용 합니다.
@@ -213,13 +213,13 @@ useEffect 안에 switch 문을 이용하여 각각의 이벤트를 주었습니�
 
 
 # 로드뷰 및 이벤트 등록/삭제
-로드뷰 지도를 이용하여 로드뷰를 생성하기 위해서는 div를 따로 생성하여야 합니다.
+로드뷰 지도를 이용하여 로드뷰를 생성하기 위해서는 div를 따로 생성하여야 합니다.        
 
     <RvWrapper className="rvWrapper">
         <RoadViewDiv className="roadview"></RoadViewDiv>
     </RvWrapper>
 
-그 후 해당 div에 연결하여 로드뷰를 적용시킵니다.
+그 후 해당 div에 연결하여 로드뷰를 적용시킵니다.        
 
 
     if(mapRightRedux.mapStyle == "roadView"){
