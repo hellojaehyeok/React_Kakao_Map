@@ -6,6 +6,17 @@ React에서 KaKao Map 을 사용하며 정리한 Repository입니다.
 실제 프로젝트에는 React 방식대로 해석하여 코드를 작성하였습니다.          
 https://apis.map.kakao.com/web/sample/          
 
+목차
+1. 기초세팅 && map 생성
+2. 이미지 Marker 생성
+3. Marker, Clusterer 동시 생성 및 응용 함수 
+4. 커스텀 오버레이 (마커 커스텀 스타일링)
+5. 지도 유형 바꾸기
+6. 로드뷰 활용
+7. 이벤트 추가 및 삭제
+8. 카테고리별 장소 검색
+9. 줌인&아웃
+10. 내 위치
 
 # 기초 세팅 && map 생성
 Kakao Map을 사용하기 위해서는 ./public/index.html에 아래 코드를 작성합니다.                
@@ -36,6 +47,7 @@ useEffect를 사용하여 로드가 완료되면 카카오 지도를 만듭니�
     }, [container]);
 
 # 이미지 Marker 생성 (기본적인 Marker 생성법)
+샘플 -> https://apis.map.kakao.com/web/sample/basicMarkerImage/         
 이미지 마커 생성법입니다.                
 이미지를 설정하지 않으면 기본 마커이미지가 표시됩니다.             
 
@@ -156,6 +168,7 @@ useEffect 등으로 배열에 좌표값을 담습니다.
 
 
 # 커스텀 오버레이 (마커 커스텀 스타일링)
+샘플 -> https://apis.map.kakao.com/web/sample/customOverlay1/         
 마커에 텍스트를 넣는 등 원하는 데로 스타일링 하고 싶을 때 커스텀 오버레이를 사용합니다.                   
 커스텀 오버레이 또한 클러스터러 사용 가능합니다.            
 
@@ -175,6 +188,7 @@ useEffect 등으로 배열에 좌표값을 담습니다.
 
 
 # 지도 유형 바꾸기
+샘플 -> https://apis.map.kakao.com/web/sample/changeOverlay1/         
 일반, 위성, 지도, 거리 뷰에 대한 코드입니다.         
 더 많은 유형은 카카오톡 샘플에 있습니다.         
 
@@ -203,8 +217,16 @@ useEffect 안에 switch 문을 이용하여 각각의 이벤트를 주었습니�
         break;
       case "roadView":
         // 로드뷰 도로 지도 입니다. ( 로드뷰마커와 로드뷰를 생성하기 위해서는 추가 코드가 필요합니다. )
+        // 아래 코드에 대해서는 이벤트 부분에서 자세히 다루겠습니다.
+        kakao.maps.event.addListener(kakaoMap, 'click', clickHandler);
+        const noRv = document.querySelector(".noRv");
+        noRv.addEventListener("click", () => {
+          kakao.maps.event.removeListener(kakaoMap, 'click', clickHandler);
+          setRoadClusterer(clusterer=>{clusterer.clear(); return clusterer;})
+        })
         kakaoMap.addOverlayMapTypeId(kakao.maps.MapTypeId.ROADVIEW);
         break;
+
       default:
         kakaoMap.setMapTypeId(kakao.maps.MapTypeId.ROADMAP);    
         break;
@@ -212,6 +234,10 @@ useEffect 안에 switch 문을 이용하여 각각의 이벤트를 주었습니�
 
 
 # 로드뷰 활용
+샘플 => https://apis.map.kakao.com/web/sample/basicRoadview2/         
+
+<img src="./img/roadView.PNG" width="100%">         
+
 로드뷰 도로 지도를 이용하여 로드뷰를 생성하기 위해서는 div를 따로 생성하여야 합니다.         
 
     <RvWrapper className="rvWrapper">
@@ -280,3 +306,127 @@ useEffect 안에 switch 문을 이용하여 각각의 이벤트를 주었습니�
         });
       }
     }
+
+
+# 이벤트 추가 및 삭제
+addListener, removeListener 로  이벤트를 추가/삭제할 수 있습니다.         
+    
+    kakao.maps.event.addListener(지도, 이벤트타입, 함수);
+
+## (중요) 이벤트 삭제 
+이벤트를 삭제할 때는 addListener에서 사용 한 함수를 그대로 사용하여야 합니다.         
+또한 같은 위치에 있어야 하며 익명 함수를 사용 시 삭제하지 못합니다.         
+( useEffect 또는 함수안에서 addListener를 하였으면 그 안에서 removeListener를 처리하여야 합니다. )         
+
+    case "roadView":
+        // click이벤트 시 clickHandler 함수를 호출합니다.
+        kakao.maps.event.addListener(kakaoMap, 'click', clickHandler);
+        const noRv = document.querySelector(".noRv");
+        // noRv를 클릭 시 이벤트를 제거합니다.
+        // 아래 코드는 외부에서 사용할 수 없습니다.
+        noRv.addEventListener("click", () => {
+          kakao.maps.event.removeListener(kakaoMap, 'click', clickHandler);
+          setRoadClusterer(clusterer=>{clusterer.clear(); return clusterer;})
+        })
+        kakaoMap.addOverlayMapTypeId(kakao.maps.MapTypeId.ROADVIEW);
+        break;
+
+
+# 카테고리별 장소 검색
+대형마트, 편의점, 유치원, 지하철 등 여러 시설들의 정보를 받아옵니다.         
+샘플 -> https://apis.map.kakao.com/web/sample/categoryFromBounds/         
+
+<img src="./img/bank.PNG" width="100%">
+
+
+    // 카테고리 검색을 요청하는 함수입니다
+    const searchPlace = () => {
+      // 현재 띄어져있는 클러스터러는 제거합니다.
+      setAroundClusterer(clusterer=>{if(!clusterer){return;} clusterer.clear(); return clusterer;});
+      // 새로운 장소를 검색합니다.
+      places.categorySearch(mapRightRedux.around.is, callback, {
+        location: new kakao.maps.LatLng(kakaoMap.getCenter().Ma, kakaoMap.getCenter().La)
+      });
+    }
+
+    // 지도에 idle 이벤트를 추가하고 특정 버튼을 클릭하면 이벤트를 삭제합니다.
+    // idle -> 중심 좌표나 확대 수준이 변경되면 발생합니다.
+    const aroundBuild = document.querySelector("#aroundBuild");
+    kakao.maps.event.addListener(kakaoMap, 'idle', searchPlace);
+    aroundBuild.addEventListener("click", () => {
+      kakao.maps.event.removeListener(kakaoMap, 'idle', searchPlace);
+      setAroundArr([]);
+    })
+
+    // 장소 검색 객체를 생성합니다.
+    var places = new kakao.maps.services.Places(kakaoMap);
+
+    // 장소검색이 완료됐을 때 호출되는 콜백함수 입니다.
+    var callback = function(data, status, pagination) {
+      // 정상적으로 검색이 완료됐으면 조건문을 실행합니다.
+      if (status === kakao.maps.services.Status.OK) {
+        let newArr = [];
+        data.map(item => {
+          newArr.push(new kakao.maps.LatLng(item.y, item.x));
+        })
+        setAroundArr(newArr);
+      }
+    };
+    searchPlace()
+
+
+# 줌인&아웃
+줌인, 줌아웃 버튼을 만들 때 사용합니다.         
+
+    // 줌인
+    kakaoMap.setLevel(kakaoMap.getLevel() - 1);
+    // 줌아웃
+    kakaoMap.setLevel(kakaoMap.getLevel() + 1);
+
+
+# 내 위치
+HTML5 GeoLocation를 이용하여 접속 위치를 얻어옵니다.         
+Chrome 브라우저는 https 환경에서만 geolocation을 지원합니다.         
+
+    useEffect(() => {
+      // 지도가 없다면 return합니다. 
+      if(!kakaoMap){return;}
+      // 내위치 토글 조건문 입니다.
+      if(mapRightRedux.isCurrnet.is){
+
+        // 마커의 토글을 위하여 클러스터러안에 마커를 담습니다.
+        function displayMarker(locPosition) {
+          let markers = [];
+          var marker = new kakao.maps.Marker({  
+              map: kakaoMap, 
+              position: locPosition
+          });
+          markers.push(marker);
+
+          var clusterer = new kakao.maps.MarkerClusterer({
+            map: kakaoMap,
+            averageCenter: true, 
+            minLevel: 1,
+            disableClickZoom: true,
+          });
+          clusterer.addMarkers(markers);
+          setCurrnetClusterer(clusterer);
+          kakaoMap.setCenter(locPosition);      
+        }
+
+        // navigator.geolocation 속성이 있다면 조건문을 실행합니다.
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(function(position) {
+              var lat = position.coords.latitude, // 위도
+                  lon = position.coords.longitude; // 경도
+              var locPosition = new kakao.maps.LatLng(lat, lon);
+              displayMarker(locPosition);
+            });
+        }else{ 
+          // 만약 브라우저가 geolocation 를 지원하지 않는다면 alert를 실행시킵니다.
+          alert("navigator.geolocation 지원하지 않음")
+        }
+      }else{
+        setCurrnetClusterer(clusterer=>{ if(!clusterer){return} clusterer.clear(); return clusterer;})
+      }
+    }, [mapRightRedux.isCurrnet, kakaoMap])
