@@ -3,7 +3,7 @@ React에서 KaKao Map 을 사용하며 정리한 Repository입니다.
 
 카카오에서 나온 sample들을 참고하였습니다.          
 아래 주소에 나온 코드들은 Vanila Script, jQuery여서          
-실제 프로젝트에는 React 방식대로 해석하여 코드를 작성하였습니다.          
+실제 프로젝트에는 React 방식대로 해석하여 코드를 작성하였습니다.           
 https://apis.map.kakao.com/web/sample/          
 
 목차
@@ -23,7 +23,7 @@ Kakao Map을 사용하기 위해서는 ./public/index.html에 아래 코드를 �
 
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey= -kakao key- &libraries=clusterer,services"></script>
 
-map을 적용시킬 div를 생성한다. useRef를 이용하여 해당 div에 접근합니다.          
+map을 적용시킬 div를 생성합니다. useRef를 이용하여 해당 div에 접근합니다.          
 map의 경우 지도 유형 등을 바꿀 때 접근해야 하기 때문에 useState로 저장하여           
 어디서든 사용할 수 있게 만들었습니다.          
 useEffect를 사용하여 로드가 완료되면 카카오 지도를 만듭니다.          
@@ -36,20 +36,20 @@ useEffect를 사용하여 로드가 완료되면 카카오 지도를 만듭니�
     .
     // Map
     useEffect(() => {
-      const center = new kakao.maps.LatLng( 위도, 경도 )); // 처음 위치를 잡는다.
+      const center = new kakao.maps.LatLng( 위도, 경도 )); // 처음 위치를 잡습니다.
       const options = {
       center,
       level: 3  // 처음 줌 거리 낮을수록 줌인
       };
 
       const map = new kakao.maps.Map(container.current, options);  // container.current -> useRef를 통해 div 에 접근한다.
-      setKakaoMap(map); // 생성한 map을 다른곳에서도 활용할 수 있게 state로 뺀다.
+      setKakaoMap(map); // 생성한 map을 다른 곳에서도 활용할 수 있게 state로 빼줍니다.
     }, [container]);
 
 # 이미지 Marker 생성 (기본적인 Marker 생성법)
 샘플 -> https://apis.map.kakao.com/web/sample/basicMarkerImage/         
-이미지 마커 생성법입니다.                
-이미지를 설정하지 않으면 기본 마커이미지가 표시됩니다.             
+이미지 마커 생성 법입니다.                
+이미지를 설정하지 않으면 기본 마커 이미지가 표시됩니다.             
 
 <img src="./img/marker.PNG" width="100%">
 
@@ -75,7 +75,7 @@ useEffect를 사용하여 로드가 완료되면 카카오 지도를 만듭니�
 <img src="./img/clusterer.PNG" width="100%">
 
 
-클러스터러는 map과 동일하게 여러 곳에서 사용하기 때문에  state로 빼줍니다.          
+클러스터러는 map과 동일하게 여러 곳에서 사용하기 때문에 state로 빼줍니다.          
 (excClusterer를 만들지 않은 이유는 따로 이용하는 곳이 없기 때문입니다.)          
 
     const [, setExcClusterer] = useState();
@@ -319,11 +319,12 @@ addListener, removeListener 로  이벤트를 추가/삭제할 수 있습니다.
 ( useEffect 또는 함수안에서 addListener를 하였으면 그 안에서 removeListener를 처리하여야 합니다. )         
 
     case "roadView":
-        // click이벤트 시 clickHandler 함수를 호출합니다.
+        // click이벤트 시 clickHandler 함수를 호출합니다.   -> 이벤트 추가
         kakao.maps.event.addListener(kakaoMap, 'click', clickHandler);
         const noRv = document.querySelector(".noRv");
+
         // noRv를 클릭 시 이벤트를 제거합니다.
-        // 아래 코드는 외부에서 사용할 수 없습니다.
+        // 아래 코드는 외부에서 사용할 수 없습니다.    -> 이벤트 제거 조건 추가
         noRv.addEventListener("click", () => {
           kakao.maps.event.removeListener(kakaoMap, 'click', clickHandler);
           setRoadClusterer(clusterer=>{clusterer.clear(); return clusterer;})
@@ -375,7 +376,8 @@ addListener, removeListener 로  이벤트를 추가/삭제할 수 있습니다.
     searchPlace()
 
 
-# 줌인&아웃
+# 줌인&아웃\
+샘플 -> https://apis.map.kakao.com/web/sample/changeLevel/        
 줌인, 줌아웃 버튼을 만들 때 사용합니다.         
 
     // 줌인
@@ -385,6 +387,7 @@ addListener, removeListener 로  이벤트를 추가/삭제할 수 있습니다.
 
 
 # 내 위치
+샘플 -> https://apis.map.kakao.com/web/sample/geolocationMarker/        
 HTML5 GeoLocation를 이용하여 접속 위치를 얻어옵니다.         
 Chrome 브라우저는 https 환경에서만 geolocation을 지원합니다.         
 
@@ -430,3 +433,5 @@ Chrome 브라우저는 https 환경에서만 geolocation을 지원합니다.
         setCurrnetClusterer(clusterer=>{ if(!clusterer){return} clusterer.clear(); return clusterer;})
       }
     }, [mapRightRedux.isCurrnet, kakaoMap])
+
+    
