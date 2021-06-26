@@ -13,8 +13,18 @@ const KakaoMap = (props) => {
     const [markerArr, setMarkerArr] = useState([
         new kakao.maps.LatLng(37.499590, 127.026374),
         new kakao.maps.LatLng(37.499427, 127.027947),
-    ]); // 마커들의 좌표데이터를 담는 변수입니다.
+    ]); // 마커들의 좌표데이터를 담는 변수입니다.  위 형태로 좌표를 넣으시면 됩니다.
     const [isMarker, setIsMarker] = useState(false); // 마커 클러스트러 상태 변수입니다.
+
+    const [, setMyClusterer] = useState(); // 내 위치토글을 위해 만든 클러스터러입니다.
+    const [isMy, setIsMy] = useState(false); // 내 위치 토글상태입니다. 
+
+    // 로드뷰를 위해 만든 변수들입니다.
+    const rvWrapperRef = useRef();
+    const roadViewRef = useRef();
+    const roadBtnRef = useRef();
+    const [, setRoadClusterer] = useState();
+    const [isRoadView, setIsRoadView] = useState(false);
 
     // 맵을 생성합니다.
     useEffect(() => {
@@ -28,14 +38,12 @@ const KakaoMap = (props) => {
         setKakaoMap(map); 
     }, [container]);
 
-
-
     // 클릭시 클러스터러의 중심좌표를 얻어옵니다.
     const setCenterClusterer = (clusterLocate) => {
         console.log(clusterLocate);
     }
 
-    // 마커/클러스터러 토글버튼 클릭 
+    // 마커/클러스터러 토글
     const onClickMarkerToggle = () => {
         isMarker?
         setClusterer(clusterer=>{if(!clusterer){return clusterer}; clusterer.clear(); return clusterer;}) // 마커, 클러스터러 제거
@@ -45,7 +53,7 @@ const KakaoMap = (props) => {
         setIsMarker(!isMarker);
     }
 
-    // 마커/클러스터러를 만드는 함수입니다.
+    // 마커/클러스터러를 만들어주는 함수입니다.
     // (좌표값이 들어있는배열, 클러스터러, 마커이미지, 클러스터러이미지)
     // 마커이미지, 클러스터러를 비워두면 기본 이미지가 나타납니다.
     const addMarkClust = (array, setClusterer, markerImg, clustererImg) => {
@@ -85,6 +93,10 @@ const KakaoMap = (props) => {
                     backgroundPosition: 'center',
                     backgroundSize: 'cover',
                     backgroundRepeat: 'no-repeat',
+                    color:"salmon",
+                    display: "flex",
+                    justifyContent:"center",
+                    alignCenter:"center",
                 },
             ]
             
@@ -106,13 +118,140 @@ const KakaoMap = (props) => {
         setClusterer(clusterer);
     }
 
+    // 내 위치 토글 ( 오차범위 있습니다. )
+   const onClickMy = () => {
+        if(!isMy){
+      
+          // 마커의 토글을 위하여 클러스터러안에 마커를 담습니다.
+          function displayMarker(locPosition) {
+            let markers = [];
+            var marker = new kakao.maps.Marker({  
+                map: kakaoMap, 
+                position: locPosition
+            });
+            markers.push(marker);
+      
+            var clusterer = new kakao.maps.MarkerClusterer({
+              map: kakaoMap,
+              averageCenter: true, 
+              minLevel: 1,
+              disableClickZoom: true,
+            });
+            clusterer.addMarkers(markers);
+            setMyClusterer(clusterer);
+            kakaoMap.setCenter(locPosition);      
+          }
+      
+          // navigator.geolocation 속성이 있다면 조건문을 실행합니다.
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var lat = position.coords.latitude, // 위도
+                    lon = position.coords.longitude; // 경도
+                var locPosition = new kakao.maps.LatLng(lat, lon);
+                displayMarker(locPosition);
+              });
+          }else{ 
+            // 만약 브라우저가 geolocation 를 지원하지 않는다면 alert를 실행시킵니다.
+            alert("navigator.geolocation 지원하지 않음")
+          }
+        }else{
+            setMyClusterer(clusterer=>{ if(!clusterer){return} clusterer.clear(); return clusterer;})
+        }
+        setIsMy(!isMy);
+    }
+
+    // 로드맵 토글
+    const onClickRoad = () => {
+
+        if(!isRoadView){
+            var rv = new kakao.maps.Roadview(roadViewRef.current); 
+            var rvClient = new kakao.maps.RoadviewClient();
+
+            var markImage = new kakao.maps.MarkerImage(
+                'https://t1.daumcdn.net/localimg/localimages/07/2018/pc/roadview_minimap_wk_2018.png',
+                new kakao.maps.Size(26, 46),
+                {
+                    spriteSize: new kakao.maps.Size(1666, 168),
+                    spriteOrigin: new kakao.maps.Point(705, 114),
+                    offset: new kakao.maps.Point(13, 46)
+                }
+            );
+
+            // 토글기능을 위하여 클러스터러에다가 넣습니다.
+            let markers = [];
+            var rvMarker = new kakao.maps.Marker({
+                image : markImage,
+                draggable: true,
+                map: kakaoMap,
+                position: new kakao.maps.LatLng(37.511138, 126.997544)
+            });
+            markers.push(rvMarker);
+            var clusterer = new kakao.maps.MarkerClusterer({
+                map: kakaoMap,
+                averageCenter: true, 
+                minLevel: 1,
+                disableClickZoom: true,
+            });
+            clusterer.addMarkers(markers);
+            setRoadClusterer(clusterer);
+
+            var clickHandler = function(mouseEvent) {    
+                var position = mouseEvent.latLng; 
+                rvMarker.setPosition(position);
+                toggleRoadview(position);
+            }; 
+
+            function toggleRoadview(position){
+                rvClient.getNearestPanoId(position, 50, function(panoId) {
+                    if (panoId === null) {
+                    roadViewRef.current.style.display = 'none';
+                    rvWrapperRef.current.style.pointerEvents  = 'none';
+                    kakaoMap.relayout();
+                    } else {
+                    kakaoMap.relayout();
+                    roadViewRef.current.style.display = 'block'; 
+                    rvWrapperRef.current.style.pointerEvents  = 'auto';
+                    rv.setPanoId(panoId, position);
+                    rv.relayout();
+                    }
+                });
+            }
+
+            kakao.maps.event.addListener(kakaoMap, 'click', clickHandler);
+            roadBtnRef.current.addEventListener("click", () => {
+            kakao.maps.event.removeListener(kakaoMap, 'click', clickHandler);
+            setRoadClusterer(clusterer=>{clusterer.clear(); return clusterer;})
+            })
+            kakaoMap.addOverlayMapTypeId(kakao.maps.MapTypeId.ROADVIEW);
+        }else{
+            kakaoMap.removeOverlayMapTypeId(kakao.maps.MapTypeId.ROADVIEW);
+            roadViewRef.current.style.display = 'none';
+            rvWrapperRef.current.style.pointerEvents = 'none';
+        }
+
+        setIsRoadView(!isRoadView);
+
+    }
+
 
     return(
         <Container>
             <KakaoMapContainer ref={container} />
             <TabWrap>
                 <MarkerToggleBtn onClick={onClickMarkerToggle}>마커 클러스터러 토글</MarkerToggleBtn>
+                <MarkerToggleBtn onClick={() => kakaoMap.setMapTypeId(kakao.maps.MapTypeId.ROADMAP) }>일반지도</MarkerToggleBtn>
+                <MarkerToggleBtn onClick={() => kakaoMap.addOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT) }>지적지도 on</MarkerToggleBtn>
+                <MarkerToggleBtn onClick={() => kakaoMap.removeOverlayMapTypeId(kakao.maps.MapTypeId.USE_DISTRICT) }>지적지도 off</MarkerToggleBtn>
+                <MarkerToggleBtn onClick={() => kakaoMap.setMapTypeId(kakao.maps.MapTypeId.HYBRID) }>위성지도</MarkerToggleBtn>
+                <MarkerToggleBtn onClick={onClickRoad} ref={roadBtnRef}>로드뷰</MarkerToggleBtn>
+                <MarkerToggleBtn onClick={() => kakaoMap.setLevel(kakaoMap.getLevel() - 1) }>줌인</MarkerToggleBtn>
+                <MarkerToggleBtn onClick={() => kakaoMap.setLevel(kakaoMap.getLevel() + 1) }>줌아웃</MarkerToggleBtn>
+                <MarkerToggleBtn onClick={onClickMy}>내위치</MarkerToggleBtn>
+
             </TabWrap>
+            <RvWrapper ref={rvWrapperRef}>
+                <RoadViewDiv ref={roadViewRef}></RoadViewDiv>
+            </RvWrapper>
         </Container>
     )
 };
@@ -132,14 +271,39 @@ const Container = styled.div`
 `
 const TabWrap = styled.div`
     position: absolute;
-    top:10px;
-    right: 10px;
+    top:0px;
+    right: 0px;
     z-index: 30;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    width: 180px;
+    padding: 20px;
+    align-items: center;
 `
 const MarkerToggleBtn = styled.button`
     width: 150px;
     height: 50px;
-    background-color: #fff;
-    border:1px solid black;
-    border-radius: 5px;
+    border:0;
+    cursor: pointer;
+    color: #454545;
+    margin-bottom: 16px;
+    border-radius: 32px;
+    background: #ffffff;
+    box-shadow:  17px 17px 34px #c2c2c2,
+                -17px -17px 34px #ffffff;
+`
+const RvWrapper = styled.div`
+  position:absolute;
+  bottom:150px;
+  left:22px;
+  width:650px;
+  height:350px;
+  z-index:0;
+  z-index: 99;
+`
+
+const RoadViewDiv = styled.div`
+  width:100%;
+  height:100%;
 `
