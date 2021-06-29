@@ -259,15 +259,18 @@ const KakaoMap = (props) => {
 export default KakaoMap;
 
 // 지도를 표시하는 컴퍼넌트입니다.
-// KakaoMapContainer 사이즈 조절을 하시면 됩니다.
-const KakaoMapContainer = styled.div`
-  width:100vw;
-  height:100vh;
-`
-
-// Style -----
+// Container 사이즈 조절을 하시면 됩니다.
 const Container = styled.div`
     position: relative;
+    width:100vw;
+    height:100vh;
+`
+
+
+// Style -----
+const KakaoMapContainer = styled.div`
+    width:100%;
+    height:100%;
 `
 const TabWrap = styled.div`
     position: absolute;
